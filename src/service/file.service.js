@@ -72,13 +72,22 @@ class FileService {
     const [res] = await pool.execute(statement, [momentId])
     return res
   }
+
   async deleteCoverByMomentId (momentId) {
     const statement = `
           delete from file where id = ?
-        `
+      `
     const res = await pool.execute(statement, [momentId])
     console.log('删除封面数据成功..')
     return res[0]
+  }
+  async updateMomentIdbyfilename(momentId,filename) {
+    const statement = `
+          update file set moment_id = ? where filename = ?
+        `
+   const res = await pool.execute(statement, [momentId,filename])
+   console.log('删除封面数据成功..')
+   return res[0]
   }
 }
 

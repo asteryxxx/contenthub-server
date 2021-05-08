@@ -13,17 +13,16 @@ const sqlFragment = `
 `
 
 class MomentService {
-  async create (content, title, userId, cover, status) {
-    console.log('进入create content.....' + status)
+  async create (article, userId) {
     const createDate = moment().format('YYYY-MM-DD HH:mm')
     // const createDate = '2021-01-28 16:48:29';
     const statement = `INSERT INTO moment (content, title, user_id,cover,status,createAt) VALUES (?,?,?,?,?,?);`
     const res = await pool.execute(statement, [
-      content,
-      title,
+      article.content,
+      article.title,
       userId,
-      cover,
-      status,
+      article.cover,
+      article.status,
       createDate
     ])
     //将content存储到数据库中
@@ -69,7 +68,7 @@ class MomentService {
   }
 
   async getMomentById (id) {
-    console.log('进入getMomentById方法...')
+    console.log('进入getMomentById方法...' + id)
     const statement = `
            		SELECT
            m.id, m.content, m.createAt, m.updateAt,m.title,m.status,
@@ -93,7 +92,7 @@ class MomentService {
            WHERE
            m.id = ?
         `
-    const res = await pool.execute(statement, [id])
+    const [res] = await pool.execute(statement, [id])
     /* {
             "id": 3,
             "content": "jvm虚拟机这本书籍很好~~~",
@@ -106,8 +105,8 @@ class MomentService {
         } */
     return res[0]
   }
-  async updateMomentChannel(momentId, channelId) {
-    console.log('进入moment updateCover方法...')
+  async updateMomentChannel (momentId, channelId) {
+    console.log('进入moment updateCover方法...' + momentId, channelId)
     const statement = `
               update moment_channel set channel_id = ? where moment_id = ?
             `
@@ -115,12 +114,24 @@ class MomentService {
     return res
   }
 
-  async  update(content, title, cover, status, momentId) {
-    console.log('进入moment update方法...'+content, title, cover, status, momentId)
+  async update (content, title, cover, status, momentId) {
+    console.log(
+      '进入moment update方法...' + content,
+      title,
+      cover,
+      status,
+      momentId
+    )
     const statement = `
           update moment set content = ?,title = ?,cover =? ,status =? where id = ?
         `
-    const [res] = await pool.execute(statement, [content, title, cover, status, momentId])
+    const [res] = await pool.execute(statement, [
+      content,
+      title,
+      cover,
+      status,
+      momentId
+    ])
     return res
   }
 
@@ -139,7 +150,6 @@ class MomentService {
           update moment set status = 4 where id = ?
         `
     const [res] = await pool.execute(statement, [momentId])
-    console.log(res)
     return res
   }
 
@@ -165,22 +175,81 @@ class MomentService {
     const statement = `
         SELECT
 	     count( 1 ) over () 'count',
-	      m.title,
+	      m.title,m.id,
 	     ( SELECT count(*) FROM COMMENT c WHERE c.moment_id = m.id ) totalComment,
-      IF( m.comment_status = 1, 'true', 'false' ) CanComment 
+      IF( m.comment_status = 1, 1, 0 ) status 
          FROM
-	    moment m   WHERE  m.user_id = ? 
+	    moment m   WHERE  m.user_id = ?
+      and m.status != 0
 	  LIMIT ?,?
       `
     const res = await pool.execute(statement, [id, offset, size])
     return res[0]
   }
   async updateMomentReplyStatus (momentId, allow_comment) {
-    allow_comment = allow_comment === 'false' ? '0' : '1'
     const statment = `
        	update moment set comment_status = ? where id = ?
       `
     const res = await pool.execute(statment, [allow_comment, momentId])
+    return res[0]
+  }
+
+  async getHomemomentList() {
+    console.log('getHomemomentList.....');
+    const statment = `
+      select * from 
+      ( 
+      select m.id 'mid', m.like_count,m.title,m.content,m.cover,c.id 'cid',c.name , (select count(c.id) from comment c 
+      where c.moment_id = m.id
+      )commentNum ,u.name 'username',u.avatar_url,
+      ROW_NUMBER() over(PARTITION by c.id order by m.like_count desc) as num  
+      from moment m , moment_channel mc, channel c ,user u
+      where m.id = mc.moment_id and c.id = mc.channel_id and u.id = m.user_id 
+      and c.id in (1,3,4,13,14)
+      ) T where T.num <= 5 order by name desc
+            `
+    const res = await pool.execute(statment, [])
+    return res[0]
+  }
+  async getHotmomentList(offset, size) {
+    const statment = `
+      select m.id 'mid', m.like_count,m.title,m.content,m.cover,c.id 'cid',c.name , 
+(select count(c.id) from comment c 
+where c.moment_id = m.id
+)commentNum ,u.name 'username',u.avatar_url
+from moment m , moment_channel mc, channel c ,user u
+where m.id = mc.moment_id and c.id = mc.channel_id and u.id = m.user_id 
+and c.id in (1,3,4,13,14)  order by m.like_count desc limit ? , ?
+            `
+    // const res = await pool.execute(statment, [])
+    const res = await pool.execute(statment, [offset, size])
+    return res[0]
+  }
+  async ChannelmomentListMore(cid, offset, size) {
+    const statment = `
+      select m.id 'mid', m.like_count,m.title,m.content,m.cover,c.id 'cid',c.name , 
+(select count(c.id) from comment c 
+where c.moment_id = m.id
+)commentNum ,u.name 'username',u.avatar_url
+from moment m , moment_channel mc, channel c ,user u
+where m.id = mc.moment_id and c.id = mc.channel_id and u.id = m.user_id 
+and c.id = ?  ORDER BY like_count desc limit ?,?
+            `
+    const res = await pool.execute(statment, [cid,offset, size])
+    return res[0]
+  }
+
+  async searchbyquery(q, offset, size) {
+    const statment = `
+      select m.id 'mid', m.like_count,m.title,m.content,m.cover,c.id 'cid',c.name , 
+      (select count(c.id) from comment c 
+      where c.moment_id = m.id
+      )commentNum ,u.name 'username',u.avatar_url
+      from moment m , moment_channel mc, channel c ,user u
+      where m.id = mc.moment_id and c.id = mc.channel_id and u.id = m.user_id 
+      and((m.content like ?) or(m.title like ?)) ORDER BY like_count desc limit ?,?
+    `
+    const res = await pool.execute(statment, ["%"+q+"%","%"+q+"%", offset, size])
     return res[0]
   }
 }

@@ -79,7 +79,7 @@ const verifyAuth = async (ctx, next) => {
         await next();
         //验证通过放行
     } catch (error) {
-        console.log('tokenAuth校验报错了，原因如下：'+error.message);
+        console.log('tokenAuth校验报错了，原因如下：'+ error.message);
         //jwt expired 说明是过期了
         const errormess = new Error(errerTypes.TOKEN_ERROR);
         ctx.app.emit('error', errormess, ctx);
@@ -96,6 +96,7 @@ const verifyPermission = async (ctx, next) => {
     //因为我们得到的参数都是以xxxId为后缀的，所以就可以得到动态表名
     const tableName = resourceKey.replace('Id', "");
     const resourceValue = ctx.params[resourceKey];
+    console.log("resourceValue:"+resourceValue)
     //虽然我们在修改的时候传的字段是：commentId,momentId 但是实际修改的时候
     //我们修改数据库的时候是改的id的数据库字段
     //例如： update moment/comment set content = ? where id = ?
@@ -112,6 +113,7 @@ const verifyPermission = async (ctx, next) => {
                 throw new Error('不具备权限~~');
                 //抛出错误统一由UNPERMISSION捕获异常
             } else {
+                console.log('有权限哦~~')
                 //通行
                 await next();
             }

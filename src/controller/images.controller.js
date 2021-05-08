@@ -20,13 +20,29 @@ class ImagesController {
       offset = (offset - 1) * size
       offset = offset.toString()
       const res = await imagesService.getImagesbyUserId(offset, size, id)
+      let resData = {} //返回的data给前端
+      if (!res.length == 0) {
+        //如果找不到数据组是一个空数组
+        resData.totalCount = res[0].count
+        resData.results = res
+      } else {
+        // 返回为0
+        resData = {
+          totalCount: 0,
+          results: []
+        }
+      }
       ctx.body = {
+        message: 'OK',
+        data: resData
+      }
+      /* ctx.body = {
         message: 'OK',
         data: {
           totalCount: res[0].count,
           result: res
         }
-      }
+      } */
     } catch (error) {
       console.log(error)
     }
@@ -81,10 +97,8 @@ class ImagesController {
   async showPic (ctx, next) {
     try {
       let filename = ctx.params.filename
-      console.log(filename)
       //获取文件名字
       const fileInfo = await imagesService.showPicbyfileName(filename)
-      console.log(fileInfo)
       let day = sd.format(fileInfo.createAt, 'YYYYMMDD')
       let dir = path.join(SUCAI_PATH, day)
       //需要查出年月日，因为文件夹前面有
@@ -106,7 +120,7 @@ class ImagesController {
       message: 'OK',
       data: {
         totalCount: res[0].count,
-        result: res
+        results: res
       }
     }
   }

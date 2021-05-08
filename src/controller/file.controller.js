@@ -8,10 +8,14 @@ const {
 } = require('../app/config')
 const UserService = require('../service/user.service')
 const MomentService = require('../service/moment.service')
+const path = require('path')
+const fs = require('fs')
 
 class FileController {
     //保存图像相关的信息。
     async saveAvatarInfo(ctx, next) {
+        const id = ctx.params.userId
+        console.log(id)
         //1、获取图像相关的信息
         // console.log(ctx.req.file);
         //可以获取到文件的信息
@@ -21,16 +25,25 @@ class FileController {
             size
         } = ctx.req.file;
         //2、将图像信息保存到数据库中
-        const { id } = ctx.user
+        // const { id } = ctx.user
         //去file表中查询有无用户id上传过的头像
         const AvaInfo = await FileService.getAvatarByUseId(id);
         if (!AvaInfo) {
             console.log('没上传过头像~~');
             await FileService.createAvatar(filename, mimetype, size, id)
         } else {
+            const dir = path.join(AVATAR_PATH, AvaInfo.fileName)
+            // 删除之前的头像
+            console.log(dir);
+            fs.unlink(dir,(error)=>{
+                if(error){
+                    console.log('删除头像失败~');
+                    return false;
+                }
+                console.log('删除头像文件成功');
+            })
             console.log('上传过，更新头像~~');
-            console.log(AvaInfo);
-            await FileService.updateAvatar(filename, mimetype, size, userId,AvaInfo.id)
+            await FileService.updateAvatar(filename, mimetype, size, id,AvaInfo.id)
         }
         //3、把图片的路径存到user表中
         const avaUrl = `${APP_HOST}:${APP_PORT}/users/${id}/avatar`
@@ -40,7 +53,9 @@ class FileController {
         //4、返回结果
         ctx.body = {
             status: "200",
-            message:'用户上传图片成功~'
+            data: {
+              url:avaUrl  
+            }
         };
     }
     async saveMomentInfo(ctx, next) {
@@ -74,20 +89,27 @@ class FileController {
 
     async saveDraftPic(ctx,next) {
        const files = ctx.req.files;
+       console.log(files.length)
        const { id } = ctx.user;
-       let url = '';
-       const {
-          mimetype,
-          filename,
-          size
-        } = files[0]
-       const res = await FileService.createFile(filename, mimetype, size, id)
-       url = (APP_HOST + ":" + APP_PORT + "/moment/images/" + filename)
-       console.log(url);
+        let url = '';
+        let urls = [];
+        if (files.length === 1) {
+          const { mimetype, filename, size } = files[0]
+          await FileService.createFile(filename, mimetype, size, id)
+          url = (APP_HOST + ":" + APP_PORT + "/moment/images/" + filename)
+          urls.push(url)
+        } else {
+            for (const ff of files) {
+                console.log(ff)
+                await FileService.createFile(ff.filename, ff.mimetype, ff.size, id)
+                url = APP_HOST + ':' + APP_PORT + '/moment/images/' + ff.filename
+                urls.push(url)
+            }
+        }
        ctx.body = {
             statusCode: 200,
             message:'用户上传草稿圖成功~',
-            url
+            url: urls
         };
     }
 }

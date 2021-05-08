@@ -14,7 +14,73 @@ class MomentController {
     const { momentId } = ctx.params
     // 如果能获取到说明是更新
     const userId = ctx.user.id
-    const form = formidable({
+    const article = ctx.request.body
+    console.log(article)
+    console.log('==============')
+    let monId = '';
+    let imagesPath = [];
+    let imagesfilenames = []
+    console.log(article)
+    if (momentId) {
+      console.log('更新')
+      imagesPath = article.cover.imagesPath
+      console.log("moment:")
+      const moment = await momentService.getMomentById(momentId)
+      console.log(moment)
+      moment.cover = JSON.parse(moment.cover)
+      console.log('moment.cover.imagesPath：'+moment.cover.imagesPath)
+      if(moment.cover.imagesPath != 0){
+        // 说明原来是有封面的
+        //删除封面
+        const list = await fileService.getCoverByMomentId(momentId)
+        if (list) {
+          await this.deleCoverPicList(list, momentId)
+        }
+      }
+      // 判断修改后的是否无图还是有图
+      if(article.cover.type != 0 ){
+        console.log('提交的是有图。。')
+        for (const img of imagesPath) {
+          let index = img.lastIndexOf('/')
+          let filename = img.substring(index + 1, img.length)
+          await fileService.updateMomentIdbyfilename(momentId, filename)
+        }
+      }
+      console.log('提交的是无图。。')
+      article.cover = JSON.stringify(article.cover)
+      await momentService.update(
+        article.content,
+        article.title,    
+        article.cover,
+        article.status,
+        momentId
+      )
+      await momentService.updateMomentChannel(momentId, article.channel_id)
+     
+    } else {
+      console.log('新建文字');
+      imagesPath = article.cover.imagesPath
+      article.cover = JSON.stringify(article.cover)
+      const res = await momentService.create(article, userId)
+      //插入成功会返回插入的id字段
+      monId = res.insertId
+      //4、给动态添加频道
+      await momentService.addChannel(monId, article.channel_id)
+      if (imagesPath.length!= 0) {
+        // 说明有封面
+        console.log('有封面')
+        for (const img of imagesPath) {
+          let index = img.lastIndexOf('/')
+          let filename = img.substring(index + 1, img.length)
+          await fileService.updateMomentIdbyfilename(monId, filename)
+        }
+      }
+    }
+    ctx.body = {
+     status: '200',
+     message: momentId ? '修改成功' : '发表成功~'
+   }
+   /*  const form = formidable({
       multiples: true
     })
     //获取到用户的id
@@ -112,10 +178,12 @@ class MomentController {
               content,
               title,
               userId,
-              cover
+              cover,
+              status
             )
             //插入成功会返回插入的id字段
             monId = res1.insertId
+            console.log('monID:'+monId)
             await fileService.createFile(
               laterfile.filename,
               laterfile.type,
@@ -129,19 +197,14 @@ class MomentController {
           default:
             console.log('error...')
         }
-      })
+      }) */
       ctx.body = {
         status: '200',
         message: momentId ? '修改成功' : '发表成功~'
       }
-    } catch (error) {
-      console.log(error)
-    }
   }
-
   //生成新的文件名，并上传文件
   async settingForm (files, laterfile, imagesPath) {
-    console.log(files, laterfile, imagesPath)
     let file = files.pic2
     let oldFilename = file.name
     let day = sd.format(new Date(), 'YYYYMMDD')
@@ -176,7 +239,7 @@ class MomentController {
       //这里的res是返回数组
       ctx.body = {
         message: 'OK',
-        data: res[0]
+        data: res
       }
     } catch (error) {
       console.log(error)
@@ -197,7 +260,6 @@ class MomentController {
       offset = (offset - 1) * size
       offset = offset.toString()
       //查询列表
-      console.log(offset, size, status, channel_id, begin_pubdate, end_pubdate)
       const res = await momentService.getMomentList(
         offset,
         size,
@@ -298,6 +360,7 @@ class MomentController {
     console.log(fileInfo)
     let day = sd.format(fileInfo.createAt, 'YYYYMMDD')
     let dir = path.join(MOMENTS_PATH, day)
+    console.log(dir);
     //需要查出年月日，因为文件夹前面有
     //【uploads\moments\images\20210204】
     const { type } = ctx.query //如果对方在链接上有传tpye的传值
@@ -316,6 +379,68 @@ class MomentController {
     }
     ctx.response.set('content-type', fileInfo.mimetype)
     ctx.body = fs.createReadStream(`${dir}/${filename}`)
+  }
+
+  async getHomemomentList(ctx, next) {
+    try {
+      const res = await momentService.getHomemomentList();
+      let arr1 = [1, 3, 4, 5, 13, 14];
+      let newArr = [];
+      for (let i = 0; i < arr1.length; i++){
+          newArr[i] = res.filter(item => item.cid === arr1[i])
+      }
+      ctx.body = {
+        status: '200',
+        data: newArr
+      }
+    } catch (error) {
+      console.log(error);        
+    }
+  }
+
+  async getHotmomentList(ctx, next) {
+    let {
+      offset = '1',
+      size = '5',
+    } = ctx.query
+    offset = (offset - 1) * size
+    offset = offset.toString()
+    const res = await momentService.getHotmomentList(offset,size);
+    ctx.body = {
+      status: '200',
+      data: res
+    }
+  }
+
+  async getChannelmomentListMore(ctx, next) {
+     let {
+      offset = '1',
+      size = '5',
+      cid
+    } = ctx.query
+    offset = (offset - 1) * size
+    offset = offset.toString()
+    const res = await momentService.ChannelmomentListMore(cid,offset,size);
+    ctx.body = {
+      status: '200',
+      data: res
+    }
+  }
+
+  async searchbyquery(ctx, next) {
+    console.log('[[[[[search....');
+    let {
+      offset = '1',
+      size = '5',
+      q
+    } = ctx.query
+    offset = (offset - 1) * size
+    offset = offset.toString()
+    const res = await momentService.searchbyquery(q, offset, size);
+    ctx.body = {
+      status: 200,
+      data: res
+    }
   }
 }
 

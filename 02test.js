@@ -108,11 +108,7 @@ create()
   console.log('出来了:' + rs)
 }
 create() */
-console.log("------")
 
-let arr = [3,4,10]
-array.forEach(ele => {
-  ele = ele+","
-});
+
 // let sql = `select * from user where id in (${shuzu})`
 // console.log(sql);

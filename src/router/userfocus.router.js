@@ -1,4 +1,7 @@
 const Router = require('koa-router')
+const userfocusRouter = new Router({
+  prefix: '/userfocus'
+})
 const {
   showfollow,
   showfans,
@@ -9,13 +12,9 @@ const {
 const {
   verifyAuth,
 } = require('../middleware/auth.middleware')
-const userfocusRouter = new Router({
-  prefix: '/userfocus'
-})
 userfocusRouter.get('/showfollow',verifyAuth,showfollow)
 userfocusRouter.get('/showfans', verifyAuth, showfans)
 userfocusRouter.get('/showrecommends', verifyAuth, showrecommends)
 userfocusRouter.delete('/deletefan/:userId', verifyAuth, deletefan)
 userfocusRouter.post('/followuser/:userId', verifyAuth, followuser)
 module.exports = userfocusRouter
-

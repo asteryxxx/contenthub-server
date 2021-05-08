@@ -41,7 +41,7 @@ class CommentController {
     console.log('showcommentstatus.....')
     const { id } = ctx.user
     let { offset = '1', size = '10' } = ctx.query
-    // 如果不传就用默认值1和10
+    // 如果不传就用默认值
     offset = (offset - 1) * size
     offset = offset.toString()
     try {
@@ -69,10 +69,11 @@ class CommentController {
   async updateMomentCanRepleyStatus (ctx, next) {
     const { momentId } = ctx.params
     const { allow_comment } = ctx.request.body
+    console.log(typeof allow_comment)
     await momentService.updateMomentReplyStatus(momentId, allow_comment)
     ctx.body = {
       status: '200',
-      message: '修改状态成功~'
+      message: '修改状态成功'
     }
   }
 }

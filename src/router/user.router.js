@@ -3,7 +3,8 @@ const {
     create,
     ListUsers,
     avatarInfo,
-    getUserProfile
+    getUserProfile,
+    updateUser
 } = require('../controller/user.controller')
 const userRouter = new Router({
     prefix: "/users"
@@ -21,7 +22,7 @@ const {
 userRouter.post('/',verifyUser,handlePassword, create);
 //verifyUser：需要验证用户，防止名字重复
 //handlePassword:对密码进行加密
-
+userRouter.patch('/update',verifyAuth,updateUser)
 userRouter.get('/profile', verifyAuth, getUserProfile)
 /* class Person {
     sayhi() {

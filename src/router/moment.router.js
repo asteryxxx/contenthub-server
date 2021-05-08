@@ -8,7 +8,11 @@ const {
     list,
     remove,
     addChannels,
-    fileInfo
+    fileInfo,
+    getHomemomentList,
+    getHotmomentList,
+    getChannelmomentListMore,
+    searchbyquery
 } = require('../controller/moment.controller')
 
 const {
@@ -22,10 +26,14 @@ const {
     MomentHandler
 } = require('../middleware/file.middleware')
 
-momentRouter.post('/', verifyAuth, create);
+momentRouter.get('/searchbyquery', searchbyquery);
+momentRouter.get('/homemoments', getHomemomentList)
+momentRouter.get('/hotmoments', getHotmomentList)
+momentRouter.get('/channelmomentsMore', getChannelmomentListMore)
 momentRouter.get('/list',verifyAuth, list);
-momentRouter.get('/:momentId',verifyAuth, detailById);
+momentRouter.get('/:momentId', verifyAuth, detailById);
 
+momentRouter.post('/', verifyAuth, create);
 momentRouter.patch('/:momentId', verifyAuth,verifyPermission, create);
 //修改条件：1)用户必须登录，有token 2)用户具备权限,只能修改自己的
 momentRouter.delete('/:momentId', verifyAuth,verifyPermission, remove)

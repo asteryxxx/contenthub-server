@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="app">
+    <form>
+      <input type="text"  v-model="number">
+      <button type="button" @click="increment">增加</button>
+    </form>
+    ===================
+     <input type="text"  v-bind:value="number">
+  </div>
+<script>
+    class Vue {
+        constructor(options) {
+            //通过选择获取到根对象的dom
+            this.$el = document.querySelector(options.el);
+            this.$data = options.data;
+            this.$options = options;
+            //上面是保存数据
+
+            //把data添加响应式系统中创建dep对象
+            new Observer(this.$data);
+            //代理this.$data的数据
+            this._proxyData();
+        }
+        _proxyData(){
+            for (let key in this.$data) {
+                Object.defineProperty(this, key, {
+                    configurable: false,
+                    enumerable: true,
+                    //writable: true/fasle 可以修改不
+                    set(val) {
+                        console.log('设置的新值：'+val);
+                        this.$data[key] = val;
+                    },
+                    get() {
+                        console.log('获取值..');
+                        return this.$data[key]
+                    }
+                })
+            }
+        }
+    }
+    class Observer {
+        constructor(data){
+            this.data = data;
+            //this.data就是定义的全部属性和值
+            Object.keys(data).forEach(key=> {
+               this.defineReactive(this.data, key, this.data[key])
+            })
+        }
+        defineReactive(data, key ,val){
+            //一个属性key对应一个Dep对象
+            const dep = new Dep();
+            Object.defineProperty(data, key, {
+                    configurable: false,
+                    enumerable: true,
+                    set(newVal) {
+                        console.log('22设置的新值：'+val);
+                        if(val === newVal){
+                            //如果修改后的值与原来的相同直接return
+                            return;
+                        }
+                        val = newVal;
+                        //不相同就赋值
+                        //然后唤醒
+                        dep.notify();
+                    },
+                    get() {
+                        console.log('22获取值..');
+                        if(Dep.target){
+                            dep.addSub(Dep.target)
+                        }
+                        //收集依赖
+                        return val
+                    } 
+            })
+        }
+    }
+    class Watcher {
+        constructor(node, name, vm){
+            this.node = node;
+            this.name = name;
+            this.vm = vm;
+            console.log(this);
+            Dep.target = this;
+            this.update();
+        }
+        update(){
+            console.log('update...')
+            console.log(this.vm);
+            this.node.nodeValue = this.vm[this.name]
+        }
+    }
+    function Dep(){
+    this.subs = []      
+}
+Dep.prototype = {
+    constructor: Dep,
+    addSub: function(sub){
+        this.subs.push(sub)
+    },
+    notify: function(){
+        this.subs.forEach(function(sub){
+            sub.update() // 调用的Watcher的update方法
+      })
+    }
+}
+    const app = new Vue({
+        el: '#app',
+        data: {
+            number: 0,
+            msg: 'hi msg..'
+        }
+    })
+    console.log(app);
+</script>
+</body>
+</html>

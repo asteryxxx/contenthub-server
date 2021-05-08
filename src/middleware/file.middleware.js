@@ -27,7 +27,7 @@ const Momentstorage = Multer.diskStorage({
     },
     filename: function (req, file, cb) {
         let extname = path.extname(file.originalname);
-        cb(null, Date.now()+extname);
+        cb(null, Date.now()+"_"+Math.floor(Math.random()*100000)+extname);
     }
 })
 const Momentupload = Multer({

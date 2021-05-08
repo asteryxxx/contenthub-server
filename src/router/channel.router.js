@@ -7,9 +7,17 @@ const channelRouter = new Router({
 });
 const {
     create,
-    list
+    list,
+    nologinlist,
+    loginbyUser,
+    deleteChannelByuserId,
+    addUserchannel
 } = require('../controller/channel.controller')
 channelRouter.post('/', verifyAuth, create);
+channelRouter.post('/adduserchannel', verifyAuth, addUserchannel);
 channelRouter.get('/', list);
+channelRouter.get('/nologin', nologinlist)
+channelRouter.get('/loginUser', verifyAuth, loginbyUser);
+channelRouter.delete('/', verifyAuth, deleteChannelByuserId)
 
 module.exports = channelRouter;

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="app">
+        {{message}}--{{name}}
+    </div>
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script>
+    const app = new Vue({
+        el: '#app',
+        data: {
+            message: '哈哈哈哈',
+            name: 'zhh'
+        }
+    })
+    console.log(app);
+</script>
+
+<script>
+    const obj = {
+        msg: 'msg...',
+        name: 'lx'
+    }
+    Object.keys(obj).forEach(key =>{
+        let val = obj[key];
+        Object.defineProperty(obj, key, {
+            set(newVal){
+                console.log('监听' +key+'改变');
+                val = newVal
+            },
+            get(){
+                //张三：get -> update
+                //李四：get -> update
+                //王五：get -> update
+                return val
+            }
+        })
+    })
+    obj.name = 'zjt'
+    
+    //发布订阅者
+    class Dep {
+        constructor() {
+            this.subscribes = []
+        }
+        addSub(watcher){
+            this.subscribes.push(watcher);
+        }
+        notify(){
+            this.subscribes.forEach(item => {
+                item.update()
+                //通知全部订阅的人
+            })
+        }
+    }
+    //观察者
+    class Watcher {
+        constructor(name) {
+            this.name = name
+        }
+        update() {
+            console.log(this.name +':update');
+        }
+    }
+
+    const dep = new Dep();
+    const w1 = new Watcher('zs')
+    const w2 = new Watcher('ls')
+    const w3 = new Watcher('ww')
+    dep.addSub(w1);dep.addSub(w2);dep.addSub(w3);
+    console.log(dep.subscribes);
+</script>
+</body>
+</html>

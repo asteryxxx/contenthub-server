@@ -3,6 +3,7 @@ const pool = require('../app/database')
 class AuthService {
   //通用方法：检测用户有无权限
   async checkResource(tableName, id, userId) {
+    console.log(tableName, id, userId)
     //select * from comment where id = 1 and user_id = 3 ;
     //select * from moment where id = ? and user_id = ? ;
     //我们可以发现只有表名是变的，后面的都是不变的。如果查询到记录说明有权限更改
@@ -13,6 +14,7 @@ class AuthService {
             `;
         const [res] = await pool.execute(statement, [id, userId])
         //如果数组等于0说明找不到，不具备权限的，返回true
+        console.log("查询结果如下:")
         console.log(res.length);
         return res.length === 0 ? true : false;
       } catch (error) {
@@ -20,7 +22,7 @@ class AuthService {
       }
   }
     async checkMoment(momentId, userId) {
-       console.log('进入checkMoment方法。。。。');
+       console.log('进入checkMoment方法。。');
        
     }
 }

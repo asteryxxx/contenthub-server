@@ -30,7 +30,7 @@ const errorHandler = (error, ctx) => {
              message = '请携带token...';
             break;
         case errerTypes.UNPERMISSION:
-            status = 401;
+            status = 403;
             message = '你未具备操作的权限...';
             break;
         case errerTypes.UPLOADMOMENTCOVER_ERROR:
@@ -39,10 +39,12 @@ const errorHandler = (error, ctx) => {
             break;
         default:
             status = 404;
-            message = '找不到页面...'
+            message = '找不到页面..'
     }
     ctx.status = status;
-    ctx.body = message;
+    ctx.body = {
+        status,message
+    };
 }
 
 module.exports = errorHandler;

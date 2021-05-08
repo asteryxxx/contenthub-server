@@ -4,6 +4,7 @@ const { AVATAR_PATH } = require('../costants/file-path');
 const FileService = require('../service/file.service');
 const authService = require('../service/auth.service');
 const userService = require('../service/user.service');
+const errerTypes = require('../costants/error-types')
 
 class UserController {
   async create(ctx, next) {
@@ -16,6 +17,18 @@ class UserController {
       status: 'OK',
       message:'添加用户成功~'
     };
+  }
+  async updateUser(ctx, next) {
+    //获取用户请求传递的参数
+    const user = ctx.request.body
+    const {id} = ctx.user
+    //查询数据
+    await service.updateUser(user,id)
+    //返回数据
+    ctx.body = {
+      status: 'OK',
+      message: '修改用户信息成功~'
+    }
   }
   async ListUsers(ctx, next) {
     ctx.body = '返回listuser....'
@@ -38,7 +51,8 @@ class UserController {
       const useInfo = await userService.getUserbyId(id);
       ctx.body = useInfo;
     } catch (error) {
-      console.log(error);
+      const errormess = new Error(errerTypes.TOKEN_ERROR)
+      return ctx.app.emit('error', errormess, ctx)
     }
   }
 }

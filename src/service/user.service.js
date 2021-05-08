@@ -12,6 +12,12 @@ class UserService {
         console.log('添加user数据成功..');
         return res[0];
     }
+    async updateUser(user, id) {
+        const { sex, sign } = user
+        const statement = `UPDATE user SET sex = ?, sign = ? where id = ?`
+        const res = await pool.execute(statement, [sex,sign,id])
+        return res[0]
+    }
     async getUserByName(name) {
         console.log('进入getUserByName.....');
         const statement = `SELECT * FROM USER WHERE NAME = ? `;
@@ -46,12 +52,12 @@ class UserService {
         return res[0];
     }
     async getUserRecommendbyId(id) {
-        const statement = `SELECT sign,avatar_url,name FROM USER WHERE id = ? `;
+        const statement = `SELECT sign,avatar_url,name,id FROM USER WHERE id = ? `;
         const [res] = await pool.execute(statement, [id])
         return res[0];
     }
     async getExceptmyRecommends(id,offset, size) {
-        const statement = `select count(1) over()'count',
+        const statement = `select count(1) over()'count',id,
 name,sign,avatar_url from user where id!= ? limit ?,?`
         const res = await pool.execute(statement, [id,offset, size])
         return res[0]
